@@ -22,12 +22,18 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    # Gradle требует прав на исполнение
-    - name: Make Gradle Executable (if wrapper exists)
-      run: chmod +x gradlew || true
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r25c
+
+    # ВАЖНО: Принудительно ставим Gradle 8.2 (Gradle 9 ломает сборку Android)
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.2'
 
     - name: Build Debug APK
-      # Если у вас нет gradlew в репо, используем установленный gradle
       run: gradle assembleDebug --no-daemon
 
     - name: Upload APK
@@ -35,4 +41,4 @@ jobs:
       with:
         name: ALifeSim-APK
         path: build/outputs/apk/debug/build-debug.apk
-
+        
