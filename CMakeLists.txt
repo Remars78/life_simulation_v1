@@ -3,13 +3,7 @@ project(ALifeSim)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# Настройка для Android
-if(ANDROID)
-    set(CMAKE_ANDROID_ARCH_ABI arm64-v8a)
-    set(CMAKE_ANDROID_STL_TYPE c++_static)
-endif()
-
-# Подключаем Raylib через FetchContent
+# --- Raylib Fetch ---
 include(FetchContent)
 FetchContent_Declare(
     raylib
@@ -17,12 +11,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(raylib)
 
-# Определяем исполняемый файл
-# Для Android Raylib требует, чтобы это была библиотека, но современные инструменты позволяют и executable
-# Самый надежный способ для Android Native Activity:
-add_library(main SHARED src/main.cpp)
+# --- Android Configuration ---
+if(ANDROID)
+    add_library(main SHARED src/main.cpp)
+    
+    # Линковка
+    target_link_libraries(main PRIVATE raylib android log EGL GLESv2 OpenSLES)
+    
+    # Важно: ANativeActivity требует, чтобы библиотека не выгружалась при сворачивании
+    target_compile_definitions(main PRIVATE PLATFORM_ANDROID)
+else()
+    # Для сборки на ПК (тестирование)
+    add_executable(ALifeSim src/main.cpp)
+    target_link_libraries(ALifeSim PRIVATE raylib)
+endif()
 
-# Линкуем Raylib и системные библиотеки Android
-target_link_libraries(main PRIVATE raylib android log)
-
-# Копируем ресурсы (если есть) - здесь их нет, все процедурное
