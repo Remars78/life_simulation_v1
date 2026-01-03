@@ -3,96 +3,36 @@ name: Build Android APK
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Setup Java
-      uses: actions/setup-java@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
         java-version: '17'
+        distribution: 'temurin'
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
+      uses: android-actions/setup-android@v3
 
-    - name: Setup Android NDK
-      uses: nttld/setup-ndk@v1
+    # Gradle требует прав на исполнение
+    - name: Make Gradle Executable (if wrapper exists)
+      run: chmod +x gradlew || true
+
+    - name: Build Debug APK
+      # Если у вас нет gradlew в репо, используем установленный gradle
+      run: gradle assembleDebug --no-daemon
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
       with:
-        ndk-version: r25c
+        name: ALifeSim-APK
+        path: build/outputs/apk/debug/build-debug.apk
 
-    - name: Setup CMake
-      uses: jwlawson/actions-setup-cmake@v1.13
-
-    # Самый простой способ собрать Raylib проект под Android без кучи Gradle файлов в репо - 
-    # клонировать шаблон Raylib для Android и подложить туда наш main.cpp
-    - name: Setup Raylib Android Structure
-      run: |
-        git clone https://github.com/raysan5/raylib.git raylib_src
-        # Используем встроенный в raylib шаблон для Android сборки (если он есть) или создаем минимальный
-        # В данном случае проще использовать готовый raylib-game-template
-        git clone https://github.com/raysan5/raylib-game-template.git android_build
-        
-        # Заменяем исходники
-        cp src/main.cpp android_build/src/raylib_game.c 
-        # Обратите внимание: шаблон ожидает .c файл, но C++ тоже работает, нужно лишь переименовать в Makefile/CMake
-        
-        cd android_build
-        # Хак: меняем расширение в Makefile шаблона (если там Makefile) или настраиваем CMake
-        # Для простоты в этом ответе мы будем использовать простой скрипт сборки
-    
-    # АЛЬТЕРНАТИВНЫЙ И БОЛЕЕ НАДЕЖНЫЙ ВАРИАНТ ДЛЯ ЭТОГО ОТВЕТА:
-    # Использовать готовый Docker образ для сборки Raylib APK
-    - name: Build in Docker
-      uses: docker://georgik/raylib-android-builder:latest
-      with:
-        args: |
-          sh -c "
-          mkdir -p build && cd build &&
-          cmake .. -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-29 &&
-          make
-          "
-      # Примечание: Docker вариант может быть тяжеловесным.
-      
-    # ВАРИАНТ 3: Ручная сборка через CMake (рекомендуемый)
-    - name: Build with CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. \
-          -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_HOME}/build/cmake/android.toolchain.cmake \
-          -DANDROID_ABI=arm64-v8a \
-          -DANDROID_NATIVE_API_LEVEL=29 \
-          -DANDROID_STL=c++_static \
-          -DCMAKE_BUILD_TYPE=Release
-        make -j$(nproc)
-
-    # Упаковка в APK требует Gradle. 
-    # Так как мы пишем "код с нуля", лучше всего использовать 'raylib-game-template' стратегию:
-    
-  build-with-template:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Build Android APK using Raylib Action
-        # Этот экшен автоматически берет ваши исходники и упаковывает в APK
-        # Это самое простое решение для пользователя.
-        uses: bazzilic/raylib-build-apk-action@v1
-        with:
-          source-path: 'src'
-          raylib-version: '4.5.0'
-          name: 'ALifeSim'
-          
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
-        with:
-          name: ALifeSim-Android
-          path: build/ALifeSim.apk
