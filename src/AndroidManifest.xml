@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.alifesim"
-    android:versionCode="1"
-    android:versionName="1.0" >
-    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="33" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
-    <application android:label="ALifeSim" android:icon="@mipmap/ic_launcher">
+    <application android:label="ALife Sim" android:icon="@android:drawable/sym_def_app_icon">
         <activity android:name="android.app.NativeActivity"
-            android:label="ALifeSim"
-            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="ALife Sim"
+            android:configChanges="orientation|keyboardHidden|screenSize|touchscreen"
             android:screenOrientation="landscape"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:exported="true">
             <meta-data android:name="android.app.lib_name" android:value="main" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -19,3 +16,4 @@
         </activity>
     </application>
 </manifest>
+
